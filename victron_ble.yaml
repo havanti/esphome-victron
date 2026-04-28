@@ -1,0 +1,138 @@
+# MAC addresses and bind keys MUST come from secrets.yaml — never commit them.
+# secrets.yaml example:
+#   smart_shunt_mac_address: "AA:BB:CC:DD:EE:FF"
+#   smart_shunt_encryption_key: "0123456789abcdef0123456789abcdef"
+#   smart_solar_mac_address:   "AA:BB:CC:DD:EE:00"
+#   smart_solar_encryption_key: "fedcba9876543210fedcba9876543210"
+
+esphome:
+  name: "victron-ble"
+  min_version: 2026.4.2
+
+external_components:
+  - source: github://havanti/esphome-victron
+    refresh: 24h
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+
+esp32_ble_tracker:
+
+victron_ble:
+  - id: MySmartShunt
+    mac_address: !secret smart_shunt_mac_address
+    bindkey: !secret smart_shunt_encryption_key
+
+    # Advanced users can use `on_*_message` action. The data is in the `message` variable.
+    on_battery_monitor_message:
+      - logger.log: "Message from Battery Monitor."
+    on_solar_charger_message:
+      - logger.log: "Message from Solar Charger."
+    on_inverter_message:
+      - logger.log: "Message from Inverter."
+    on_dcdc_converter_message:
+      - logger.log: "Message from DC/DC Converter."
+    on_smart_lithium_message:
+      - logger.log: "Message from Smart Lithium."
+    on_inverter_rs_message:
+      - logger.log: "Message from Inverter RS."
+    on_smart_battery_protect_message:
+      - logger.log: "Message from Smart Battery Protect."
+    on_lynx_smart_bms_message:
+      - logger.log: "Message from Lynx Smart BMS."
+    on_multi_rs_message:
+      - logger.log: "Message from Multi RS."
+    on_ve_bus_message:
+      - logger.log: "Message from VE.Bus."
+    on_dc_energy_meter_message:
+      - logger.log: "Message from DC Energy Meter."
+
+  - id: MySmartSolar
+    mac_address: !secret smart_solar_mac_address
+    bindkey: !secret smart_solar_encryption_key
+
+sensor:
+  # MySmartShunt
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Time remaining"
+    type: TIME_TO_GO
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Battery voltage"
+    type: BATTERY_VOLTAGE
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Starter Battery"
+    # BAUX_VOLTAGE or MID_VOLTAGE or TEMPERATURE.
+    # Depending on configuration of SmartShunt
+    type: AUX_VOLTAGE
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Current"
+    type: BATTERY_CURRENT
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Consumed Ah"
+    type: CONSUMED_AH
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "State of charge"
+    type: STATE_OF_CHARGE
+
+  # MySmartSolar
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "Battery Voltage"
+    type: BATTERY_VOLTAGE
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "Battery Current"
+    type: BATTERY_CURRENT
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "Yield Today"
+    type: YIELD_TODAY
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "PV Power"
+    type: PV_POWER
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "Load Current"
+    type: LOAD_CURRENT
+
+binary_sensor:
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Battery has Alarm"
+    type: ALARM
+
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "MPPT is in Fault state"
+    type: DEVICE_STATE_FAULT
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "MPPT has Error"
+    type: CHARGER_ERROR
+
+text_sensor:
+  - platform: victron_ble
+    victron_ble_id: MySmartShunt
+    name: "Battery Alarm reason"
+    type: ALARM_REASON
+
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "MPPT state"
+    type: DEVICE_STATE
+  - platform: victron_ble
+    victron_ble_id: MySmartSolar
+    name: "MPPT Error reason"
+    type: CHARGER_ERROR

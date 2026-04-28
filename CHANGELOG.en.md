@@ -1,0 +1,43 @@
+# Changelog
+
+[🇩🇪 Deutsch](CHANGELOG.md) | 🇬🇧 English
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+---
+
+## Compatibility status
+
+Tested with:
+- ESPHome **2026.4.3** — ESP-IDF ✅
+
+Platform: ESP32 with ESP-IDF framework only (no Arduino).
+
+---
+
+## [0.1.0] — 2026-04-28 — Initial Havanti fork
+
+### Added
+- Standalone fork of [Fabian-Schmidt/esphome-victron_ble](https://github.com/Fabian-Schmidt/esphome-victron_ble) as `havanti/esphome-victron`
+- Bilingual documentation (DE/EN) in Havanti style: `README.md`, `README.en.md`, `CHANGELOG.md`, `CHANGELOG.en.md`, `CONTRIBUTING.md`, `CONTRIBUTING.en.md`
+
+### Changed
+- Strict ESP-IDF platform check: C++ guard `USE_ESP32_FRAMEWORK_ESP_IDF`, Python validator `CORE.is_esp32 and not CORE.using_arduino`
+- Replaced all POSIX `u_int*_t` types with C99 `uint*_t` (POSIX types are not provided by GCC under ESP-IDF 5.x)
+- `encrypted_data` signatures now consistently use the `VICTRON_ENCRYPTED_DATA_MAX_SIZE` constant
+- `victron_ble.yaml` example: source set to `havanti/esphome-victron`, framework explicitly `esp-idf`, `min_version: 2026.4.2`
+- `CODEOWNERS` of all components set to `@havanti`
+
+### Fixed
+- BinarySensor: removed `publish_state("")` in default branches — the string literal was implicitly converted to `bool true` and falsely triggered alarm/error states
+
+### Removed
+- Upstream maintainer infrastructure not useful for this fork: `.github/`, `.devcontainer/`, `.clang-format`, `.clang-tidy`, `.flake8`, `.yamllint`, `script/`, `tests/`, `platformio.ini`, `archive/`
+- WT32-SC01 display example (Arduino framework, incompatible with ESP-IDF-only)
+- Standalone `README.victron_ble_connect.md` (content will be re-created as bilingual docs when needed)
+
+### Documentation
+- New `README.md` in Havanti style with quickstart, device table, bind-key guide, sample configuration and FAQ
+- Notes on bind-key security (exclude local YAMLs via `.git/info/exclude`)
