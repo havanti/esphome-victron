@@ -240,52 +240,52 @@ void VictronBleConnect::read_value_(const uint16_t handle, const uint8_t *value,
     handle_found = true;
     this->value_state_of_charge_ = *reinterpret_cast<const uint16_t *>(value);
     this->value_is_set_state_of_charge_ = true;
-    ESP_LOGD(TAG, "[%s] State of Charge: %u", this->get_name().c_str(), this->value_state_of_charge_);
+    ESP_LOGD(TAG, "[%s] State of Charge: %u", this->get_name().c_str(), this->value_state_of_charge_.load());
   } else if (handle == this->handle_voltage_ && value_len == sizeof(int16_t)) {
     handle_found = true;
     this->value_voltage_ = *reinterpret_cast<const int16_t *>(value);
     this->value_is_set_voltage_ = true;
-    ESP_LOGD(TAG, "[%s] Voltage: %i", this->get_name().c_str(), this->value_voltage_);
+    ESP_LOGD(TAG, "[%s] Voltage: %i", this->get_name().c_str(), this->value_voltage_.load());
   } else if (handle == this->handle_power_ && value_len == sizeof(int16_t)) {
     handle_found = true;
     this->value_power_ = *reinterpret_cast<const int16_t *>(value);
     this->value_is_set_power_ = true;
-    ESP_LOGD(TAG, "[%s] Power: %i", this->get_name().c_str(), this->value_power_);
+    ESP_LOGD(TAG, "[%s] Power: %i", this->get_name().c_str(), this->value_power_.load());
   } else if (handle == this->handle_current_ && value_len == sizeof(int32_t)) {
     handle_found = true;
     this->value_current_ = *reinterpret_cast<const int32_t *>(value);
     this->value_is_set_current_ = true;
-    ESP_LOGD(TAG, "[%s] Current: %i", this->get_name().c_str(), this->value_current_);
+    ESP_LOGD(TAG, "[%s] Current: %i", this->get_name().c_str(), this->value_current_.load());
   } else if (handle == this->handle_ah_ && value_len == sizeof(int32_t)) {
     handle_found = true;
     this->value_ah_ = *reinterpret_cast<const int32_t *>(value);
     this->value_is_set_ah_ = true;
-    ESP_LOGD(TAG, "[%s] Ah: %i", this->get_name().c_str(), this->value_ah_);
+    ESP_LOGD(TAG, "[%s] Ah: %i", this->get_name().c_str(), this->value_ah_.load());
   } else if (handle == this->handle_starter_battery_voltage_ && value_len == sizeof(int16_t)) {
     handle_found = true;
     this->value_starter_battery_voltage_ = *reinterpret_cast<const int16_t *>(value);
     this->value_is_set_starter_battery_voltage_ = true;
-    ESP_LOGD(TAG, "[%s] Starter Battery Voltage: %i", this->get_name().c_str(), this->value_starter_battery_voltage_);
+    ESP_LOGD(TAG, "[%s] Starter Battery Voltage: %i", this->get_name().c_str(), this->value_starter_battery_voltage_.load());
   } else if (handle == this->handle_val2_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
     this->value_val2_ = *reinterpret_cast<const uint16_t *>(value);
     this->value_is_set_val2_ = true;
-    ESP_LOGD(TAG, "[%s] Value 2: %u", this->get_name().c_str(), this->value_val2_);
+    ESP_LOGD(TAG, "[%s] Value 2: %u", this->get_name().c_str(), this->value_val2_.load());
   } else if (handle == this->handle_val3_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
     this->value_val3_ = *reinterpret_cast<const uint16_t *>(value);
     this->value_is_set_val3_ = true;
-    ESP_LOGD(TAG, "[%s] Value 3: %u", this->get_name().c_str(), this->value_val3_);
+    ESP_LOGD(TAG, "[%s] Value 3: %u", this->get_name().c_str(), this->value_val3_.load());
   } else if (handle == this->handle_val4_ && value_len == sizeof(int16_t)) {
     handle_found = true;
     this->value_val4_ = *reinterpret_cast<const int16_t *>(value);
     this->value_is_set_val4_ = true;
-    ESP_LOGD(TAG, "[%s] Value 4: %i", this->get_name().c_str(), this->value_val4_);
+    ESP_LOGD(TAG, "[%s] Value 4: %i", this->get_name().c_str(), this->value_val4_.load());
   } else if (handle == this->handle_remaining_time_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
     this->value_remaining_time_ = *reinterpret_cast<const uint16_t *>(value);
     this->value_is_set_remaining_time_ = true;
-    ESP_LOGD(TAG, "[%s] Remaining Time: %u", this->get_name().c_str(), this->value_remaining_time_);
+    ESP_LOGD(TAG, "[%s] Remaining Time: %u", this->get_name().c_str(), this->value_remaining_time_.load());
   }
 
   if (handle_found) {
@@ -323,7 +323,7 @@ void VictronBleConnect::send_keep_alive_() {
 void VictronBleConnect::update_sensors_() {
   if (this->state_of_charge_ != nullptr) {
     if (this->value_is_set_state_of_charge_) {
-      this->state_of_charge_->publish_state(static_cast<float>(this->value_state_of_charge_) / 100.0f);
+      this->state_of_charge_->publish_state(static_cast<float>(this->value_state_of_charge_.load()) / 100.0f);
     } else {
       this->state_of_charge_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for State of Charge.", this->get_name().c_str());
@@ -332,7 +332,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->voltage_ != nullptr) {
     if (this->value_is_set_voltage_) {
-      this->voltage_->publish_state(static_cast<float>(this->value_voltage_) / 100.0f);
+      this->voltage_->publish_state(static_cast<float>(this->value_voltage_.load()) / 100.0f);
     } else {
       this->voltage_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Voltage.", this->get_name().c_str());
@@ -341,7 +341,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->power_ != nullptr) {
     if (this->value_is_set_power_) {
-      this->power_->publish_state(static_cast<float>(this->value_power_));
+      this->power_->publish_state(static_cast<float>(this->value_power_.load()));
     } else {
       this->power_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Power consumption.", this->get_name().c_str());
@@ -350,7 +350,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->current_ != nullptr) {
     if (this->value_is_set_current_) {
-      this->current_->publish_state(static_cast<float>(this->value_current_) / 1000.0f);
+      this->current_->publish_state(static_cast<float>(this->value_current_.load()) / 1000.0f);
     } else {
       this->current_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Current.", this->get_name().c_str());
@@ -359,7 +359,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->ah_ != nullptr) {
     if (this->value_is_set_ah_) {
-      this->ah_->publish_state(static_cast<float>(this->value_ah_) / 10.0f);
+      this->ah_->publish_state(static_cast<float>(this->value_ah_.load()) / 10.0f);
     } else {
       this->ah_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Consumed Ah.", this->get_name().c_str());
@@ -368,7 +368,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->starter_battery_voltage_ != nullptr) {
     if (this->value_is_set_starter_battery_voltage_) {
-      this->starter_battery_voltage_->publish_state(static_cast<float>(this->value_starter_battery_voltage_) / 100.0f);
+      this->starter_battery_voltage_->publish_state(static_cast<float>(this->value_starter_battery_voltage_.load()) / 100.0f);
     } else {
       this->starter_battery_voltage_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Starter Battery Voltage.", this->get_name().c_str());
@@ -377,7 +377,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->val2_ != nullptr) {
     if (this->value_is_set_val2_) {
-      this->val2_->publish_state(static_cast<float>(this->value_val2_));
+      this->val2_->publish_state(static_cast<float>(this->value_val2_.load()));
     } else {
       this->val2_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Val2.", this->get_name().c_str());
@@ -386,7 +386,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->val3_ != nullptr) {
     if (this->value_is_set_val3_) {
-      this->val3_->publish_state(static_cast<float>(this->value_val3_));
+      this->val3_->publish_state(static_cast<float>(this->value_val3_.load()));
     } else {
       this->val3_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Val3.", this->get_name().c_str());
@@ -395,7 +395,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->val4_ != nullptr) {
     if (this->value_is_set_val4_) {
-      this->val4_->publish_state(static_cast<float>(this->value_val4_));
+      this->val4_->publish_state(static_cast<float>(this->value_val4_.load()));
     } else {
       this->val4_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Val4.", this->get_name().c_str());
@@ -404,7 +404,7 @@ void VictronBleConnect::update_sensors_() {
 
   if (this->remaining_time_ != nullptr) {
     if (this->value_is_set_remaining_time_) {
-      this->remaining_time_->publish_state(static_cast<float>(this->value_remaining_time_));
+      this->remaining_time_->publish_state(static_cast<float>(this->value_remaining_time_.load()));
     } else {
       this->remaining_time_->publish_state(NAN);
       ESP_LOGW(TAG, "[%s] Received no or invalid data for Remaining Time.", this->get_name().c_str());

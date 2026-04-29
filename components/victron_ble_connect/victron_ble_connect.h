@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "esphome/core/component.h"
 #include "esphome/components/ble_client/ble_client.h"
 #include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
@@ -74,12 +76,17 @@ class VictronBleConnect : public PollingComponent, public ble_client::BLEClientN
   void set_val4(sensor::Sensor *val) { this->val4_ = val; }
   void set_remaining_time(sensor::Sensor *val) { this->remaining_time_ = val; }
 
+// Per-characteristic storage: members written from the BLE GATT task
+// (gattc_event_handler / read_value_) and read from the main loop
+// (update_sensors_, called from update()). std::atomic guarantees safe
+// cross-task transitions for the typed value, the "value is set" flag,
+// and the "read requested" flag.
 #define BLE_DATA_STORAGE(name, type) \
   sensor::Sensor *name{nullptr}; \
-  uint16_t handle_##name = 0; \
-  type value_##name = std::numeric_limits<type>::max(); \
-  bool value_is_set_##name = false; \
-  bool request_read_##name = false;
+  std::atomic<uint16_t> handle_##name{0}; \
+  std::atomic<type> value_##name{std::numeric_limits<type>::max()}; \
+  std::atomic<bool> value_is_set_##name{false}; \
+  std::atomic<bool> request_read_##name{false};
 
   BLE_DATA_STORAGE(state_of_charge_, uint16_t)
   BLE_DATA_STORAGE(voltage_, int16_t)
@@ -109,10 +116,10 @@ class VictronBleConnect : public PollingComponent, public ble_client::BLEClientN
   void update_sensors_();
 
 #define BLE_DATA_RESET(name, type) \
-  this->handle_##name = 0; \
-  this->value_##name = std::numeric_limits<type>::max(); \
-  this->value_is_set_##name = false; \
-  this->request_read_##name = false;
+  this->handle_##name.store(0); \
+  this->value_##name.store(std::numeric_limits<type>::max()); \
+  this->value_is_set_##name.store(false); \
+  this->request_read_##name.store(false);
 
   void reset_state() {
     this->read_request_started_ = 0;

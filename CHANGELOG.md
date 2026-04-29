@@ -17,6 +17,16 @@ Plattform: ausschließlich ESP32 mit ESP-IDF-Framework (kein Arduino).
 
 ---
 
+## [0.1.1] — 2026-04-29 — Cross-Task-Synchronisation + Cleanup
+
+### Geändert
+- `victron_ble`: `last_package_updated_` auf `std::atomic<bool>` umgestellt; `update()` nutzt `exchange(false)` für atomares Test-and-Clear
+- `victron_ble_connect`: 10 Sätze Werte-/Flag-Member (`value_*`, `value_is_set_*`, `request_read_*`, `handle_*`) auf `std::atomic` umgestellt — verhindert Race Conditions zwischen BLE-GATT-Task und main loop
+
+### Entfernt
+- `victron_ble`: obsoleter Konfig-Schlüssel `submit_sensor_data_asap` aus Schema entfernt (war als `cv.invalid` markiert)
+
+
 ## [0.1.0] — 2026-04-28 — Initialer Havanti-Fork
 
 ### Hinzugefügt

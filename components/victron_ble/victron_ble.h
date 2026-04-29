@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
 #include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
@@ -958,7 +959,9 @@ class VictronBle : public esp32_ble_tracker::ESPBTDeviceListener, public Compone
 
 #define VICTRON_MESSAGE_STORAGE_CB(name, type) CallbackManager<void(const type *)> on_##name##_message_callback_{};
 
-  bool last_package_updated_ = false;
+  // Written from the BLE GATT/scan callback (parse_device), read from main loop update().
+  // std::atomic guarantees safe cross-task transitions.
+  std::atomic<bool> last_package_updated_{false};
 
   CallbackManager<void(const VictronBleData *)> on_message_callback_{};
   VICTRON_MESSAGE_STORAGE_CB(battery_monitor, VICTRON_BLE_RECORD_BATTERY_MONITOR)

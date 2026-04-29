@@ -2,13 +2,11 @@
 
 # ESPHOME-VICTRON
 
-[![Release](https://img.shields.io/github/v/release/havanti/esphome-victron?style=flat-square&color=blue)](https://github.com/havanti/esphome-victron/releases) [![Stars](https://img.shields.io/github/stars/havanti/esphome-victron?style=flat-square&color=yellow)](https://github.com/havanti/esphome-victron) [![ESPHome](https://img.shields.io/badge/ESPHome-%E2%89%A52026.4.2-blue?style=flat-square)](https://esphome.io) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/havanti/esphome-victron?style=flat-square&color=yellow)](https://github.com/havanti/esphome-victron) [![ESPHome](https://img.shields.io/badge/ESPHome-%E2%89%A52026.4.3-blue?style=flat-square)](https://esphome.io) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](LICENSE)
 
 [Devices](#supported-devices) • [Quick start](#quick-start) • [Bind keys](#reading-bind-keys) • [Example](#sample-configuration) • [FAQ](#faq)
 
 [🇩🇪 Deutsch](README.md) | 🇬🇧 English
-
-*Contributions welcome — please [open an issue](../../issues) before submitting a PR.*
 
 </div>
 
@@ -153,7 +151,7 @@ victron_smartshunt_bindkey: "0123456789abcdef0123456789abcdef"
 
 - **ESP32** (Classic, S3, C3 or C6 — anything with Bluetooth LE)
 - **Framework:** ESP-IDF (Arduino is rejected)
-- **ESPHome** ≥ 2026.4.2
+- **ESPHome** ≥ 2026.4.3
 - **VictronConnect app** ≥ 5.93 to read bind keys
 
 ---

@@ -23,7 +23,6 @@ CODEOWNERS = ["@havanti"]
 DEPENDENCIES = ["esp32_ble_tracker"]
 
 CONF_VICTRON_BLE_ID = "victron_ble_id"
-CONF_SUBMIT_SENSOR_DATA_ASAP = "submit_sensor_data_asap"
 CONF_ON_BATTERY_MONITOR_MESSAGE = "on_battery_monitor_message"
 CONF_ON_SOLAR_CHARGER_MESSAGE = "on_solar_charger_message"
 CONF_ON_INVERTER_MESSAGE = "on_inverter_message"
@@ -222,9 +221,6 @@ CONFIG_SCHEMA = cv.All(
             cv.GenerateID(): cv.declare_id(VictronBle),
             cv.Required(CONF_MAC_ADDRESS): bind_mac_address_or_shortened,
             cv.Required(CONF_BINDKEY): bind_key_array,
-            cv.Optional(CONF_SUBMIT_SENSOR_DATA_ASAP): cv.invalid(
-                "This key is now obsolete, please remove it"
-            ),
             cv.Optional(CONF_ON_MESSAGE): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(MessageTrigger),

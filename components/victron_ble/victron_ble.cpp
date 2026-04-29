@@ -17,8 +17,7 @@ void VictronBle::dump_config() {
 
 // Submit update to sensors & callbacks.
 void VictronBle::update() {
-  if (this->last_package_updated_) {
-    this->last_package_updated_ = false;
+  if (this->last_package_updated_.exchange(false)) {
     if (this->on_message_callback_.size() > 0) {
       this->defer("VictronBle0", [this]() { this->on_message_callback_.call(&this->last_package_); });
     }
@@ -321,7 +320,7 @@ void VictronBle::handle_record_(const VICTRON_BLE_RECORD_TYPE record_type,
                                 const uint8_t encrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE]) {
   this->last_package_.record_type = record_type;
   memcpy(this->last_package_.data.raw, encrypted_data, VICTRON_ENCRYPTED_DATA_MAX_SIZE);
-  this->last_package_updated_ = true;
+  this->last_package_updated_.store(true);
   this->update();
 }
 
