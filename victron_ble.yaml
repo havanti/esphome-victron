@@ -7,7 +7,7 @@
 
 esphome:
   name: "victron-ble"
-  min_version: 2026.4.3
+  min_version: "2026.4.3"
 
 external_components:
   - source: github://havanti/esphome-victron
