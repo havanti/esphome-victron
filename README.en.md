@@ -113,7 +113,7 @@ external_components:
   - source:
       type: git
       url: https://github.com/havanti/esphome-victron
-    refresh: 24h
+    refresh: always
 
 esp32:
   board: m5stack-atom
