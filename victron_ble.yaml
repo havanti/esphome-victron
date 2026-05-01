@@ -11,7 +11,7 @@ esphome:
 
 external_components:
   - source: github://havanti/esphome-victron
-    refresh: 24h
+    refresh: always
 
 esp32:
   board: esp32dev
