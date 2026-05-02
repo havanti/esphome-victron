@@ -31,13 +31,13 @@ Platform: ESP32 with ESP-IDF framework only (no Arduino).
 
 ### Added
 - Standalone fork of [Fabian-Schmidt/esphome-victron_ble](https://github.com/Fabian-Schmidt/esphome-victron_ble) as `havanti/esphome-victron`
-- Bilingual documentation (DE/EN) in Havanti style: `README.md`, `README.en.md`, `CHANGELOG.md`, `CHANGELOG.en.md`, `CONTRIBUTING.md`, `CONTRIBUTING.en.md`
+- Bilingual documentation (DE/EN) in Havanti style: `README.md`, `README.en.md`, `CHANGELOG.md`, `CHANGELOG.en.md`
 
 ### Changed
 - Strict ESP-IDF platform check: C++ guard `USE_ESP32_FRAMEWORK_ESP_IDF`, Python validator `CORE.is_esp32 and not CORE.using_arduino`
 - Replaced all POSIX `u_int*_t` types with C99 `uint*_t` (POSIX types are not provided by GCC under ESP-IDF 5.x)
 - `encrypted_data` signatures now consistently use the `VICTRON_ENCRYPTED_DATA_MAX_SIZE` constant
-- `victron_ble.yaml` example: source set to `havanti/esphome-victron`, framework explicitly `esp-idf`, `min_version: 2026.4.2`
+- `victron_ble.yaml` example: source set to `havanti/esphome-victron`, framework explicitly `esp-idf`, `min_version: 2026.4.3`
 - `CODEOWNERS` of all components set to `@havanti`
 
 ### Fixed
