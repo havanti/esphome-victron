@@ -10,6 +10,25 @@ namespace victron_ble {
 
 static const char *const TAG = "victron_ble";
 
+// defer() coalesces by name: a queued lambda is dropped when a new one is
+// queued under the same name. We keep one queue per record type so that
+// fast advertisement bursts collapse to the latest reading per category
+// rather than blocking unrelated handlers.
+static constexpr const char *DEFER_ON_MESSAGE = "victron.on_message";
+static constexpr const char *DEFER_SOLAR_CHARGER = "victron.solar_charger";
+static constexpr const char *DEFER_BATTERY_MONITOR = "victron.battery_monitor";
+static constexpr const char *DEFER_INVERTER = "victron.inverter";
+static constexpr const char *DEFER_DCDC_CONVERTER = "victron.dcdc_converter";
+static constexpr const char *DEFER_SMART_LITHIUM = "victron.smart_lithium";
+static constexpr const char *DEFER_INVERTER_RS = "victron.inverter_rs";
+static constexpr const char *DEFER_AC_CHARGER = "victron.ac_charger";
+static constexpr const char *DEFER_SMART_BATTERY_PROTECT = "victron.smart_battery_protect";
+static constexpr const char *DEFER_LYNX_SMART_BMS = "victron.lynx_smart_bms";
+static constexpr const char *DEFER_MULTI_RS = "victron.multi_rs";
+static constexpr const char *DEFER_VE_BUS = "victron.ve_bus";
+static constexpr const char *DEFER_DC_ENERGY_METER = "victron.dc_energy_meter";
+static constexpr const char *DEFER_ORION_XS = "victron.orion_xs";
+
 void VictronBle::dump_config() {
   ESP_LOGCONFIG(TAG, "Victron BLE:");
   ESP_LOGCONFIG(TAG, "  Address: %s", this->address_str().c_str());
@@ -19,13 +38,13 @@ void VictronBle::dump_config() {
 void VictronBle::update() {
   if (this->last_package_updated_.exchange(false)) {
     if (this->on_message_callback_.size() > 0) {
-      this->defer("VictronBle0", [this]() { this->on_message_callback_.call(&this->last_package_); });
+      this->defer(DEFER_ON_MESSAGE, [this]() { this->on_message_callback_.call(&this->last_package_); });
     }
     switch (this->last_package_.record_type) {
       case VICTRON_BLE_RECORD_TYPE::SOLAR_CHARGER:
         ESP_LOGD(TAG, "[%s] Received SOLAR_CHARGER message.", this->address_str().c_str());
         if (this->on_solar_charger_message_callback_.size() > 0) {
-          this->defer("VictronBle1", [this]() {
+          this->defer(DEFER_SOLAR_CHARGER, [this]() {
             this->on_solar_charger_message_callback_.call(&this->last_package_.data.solar_charger);
           });
         }
@@ -33,7 +52,7 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::BATTERY_MONITOR:
         ESP_LOGD(TAG, "[%s] Received BATTERY_MONITOR message.", this->address_str().c_str());
         if (this->on_battery_monitor_message_callback_.size() > 0) {
-          this->defer("VictronBle2", [this]() {
+          this->defer(DEFER_BATTERY_MONITOR, [this]() {
             this->on_battery_monitor_message_callback_.call(&this->last_package_.data.battery_monitor);
           });
         }
@@ -41,7 +60,7 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::INVERTER:
         ESP_LOGD(TAG, "[%s] Received INVERTER message.", this->address_str().c_str());
         if (this->on_inverter_message_callback_.size() > 0) {
-          this->defer("VictronBle3",
+          this->defer(DEFER_INVERTER,
                       [this]() { this->on_inverter_message_callback_.call(&this->last_package_.data.inverter); });
         }
         break;
@@ -49,7 +68,7 @@ void VictronBle::update() {
 
         ESP_LOGD(TAG, "[%s] Received DCDC_CONVERTER message.", this->address_str().c_str());
         if (this->on_dcdc_converter_message_callback_.size() > 0) {
-          this->defer("VictronBle4", [this]() {
+          this->defer(DEFER_DCDC_CONVERTER, [this]() {
             this->on_dcdc_converter_message_callback_.call(&this->last_package_.data.dcdc_converter);
           });
         }
@@ -57,7 +76,7 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::SMART_LITHIUM:
         ESP_LOGD(TAG, "[%s] Received SMART_LITHIUM message.", this->address_str().c_str());
         if (this->on_smart_lithium_message_callback_.size() > 0) {
-          this->defer("VictronBle5", [this]() {
+          this->defer(DEFER_SMART_LITHIUM, [this]() {
             this->on_smart_lithium_message_callback_.call(&this->last_package_.data.smart_lithium);
           });
         }
@@ -65,21 +84,21 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::INVERTER_RS:
         ESP_LOGD(TAG, "[%s] Received INVERTER_RS message.", this->address_str().c_str());
         if (this->on_inverter_rs_message_callback_.size() > 0) {
-          this->defer("VictronBle6",
+          this->defer(DEFER_INVERTER_RS,
                       [this]() { this->on_inverter_rs_message_callback_.call(&this->last_package_.data.inverter_rs); });
         }
         break;
       case VICTRON_BLE_RECORD_TYPE::AC_CHARGER:
         ESP_LOGD(TAG, "[%s] Received AC_CHARGER message.", this->address_str().c_str());
         if (this->on_ac_charger_message_callback_.size() > 0) {
-          this->defer("VictronBle8",
+          this->defer(DEFER_AC_CHARGER,
                       [this]() { this->on_ac_charger_message_callback_.call(&this->last_package_.data.ac_charger); });
         }
         break;
       case VICTRON_BLE_RECORD_TYPE::SMART_BATTERY_PROTECT:
         ESP_LOGD(TAG, "[%s] Received SMART_BATTERY_PROTECT message.", this->address_str().c_str());
         if (this->on_smart_battery_protect_message_callback_.size() > 0) {
-          this->defer("VictronBle9", [this]() {
+          this->defer(DEFER_SMART_BATTERY_PROTECT, [this]() {
             this->on_smart_battery_protect_message_callback_.call(&this->last_package_.data.smart_battery_protect);
           });
         }
@@ -87,7 +106,7 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::LYNX_SMART_BMS:
         ESP_LOGD(TAG, "[%s] Received LYNX_SMART_BMS message.", this->address_str().c_str());
         if (this->on_lynx_smart_bms_message_callback_.size() > 0) {
-          this->defer("VictronBleA", [this]() {
+          this->defer(DEFER_LYNX_SMART_BMS, [this]() {
             this->on_lynx_smart_bms_message_callback_.call(&this->last_package_.data.lynx_smart_bms);
           });
         }
@@ -95,21 +114,21 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::MULTI_RS:
         ESP_LOGD(TAG, "[%s] Received MULTI_RS message.", this->address_str().c_str());
         if (this->on_multi_rs_message_callback_.size() > 0) {
-          this->defer("VictronBleB",
+          this->defer(DEFER_MULTI_RS,
                       [this]() { this->on_multi_rs_message_callback_.call(&this->last_package_.data.multi_rs); });
         }
         break;
       case VICTRON_BLE_RECORD_TYPE::VE_BUS:
         ESP_LOGD(TAG, "[%s] Received VE_BUS message.", this->address_str().c_str());
         if (this->on_ve_bus_message_callback_.size() > 0) {
-          this->defer("VictronBleC",
+          this->defer(DEFER_VE_BUS,
                       [this]() { this->on_ve_bus_message_callback_.call(&this->last_package_.data.ve_bus); });
         }
         break;
       case VICTRON_BLE_RECORD_TYPE::DC_ENERGY_METER:
         ESP_LOGD(TAG, "[%s] Received DC_ENERGY_METER message.", this->address_str().c_str());
         if (this->on_dc_energy_meter_message_callback_.size() > 0) {
-          this->defer("VictronBleD", [this]() {
+          this->defer(DEFER_DC_ENERGY_METER, [this]() {
             this->on_dc_energy_meter_message_callback_.call(&this->last_package_.data.dc_energy_meter);
           });
         }
@@ -117,7 +136,7 @@ void VictronBle::update() {
       case VICTRON_BLE_RECORD_TYPE::ORION_XS:
         ESP_LOGD(TAG, "[%s] Received ORION_XS message.", this->address_str().c_str());
         if (this->on_orion_xs_message_callback_.size() > 0) {
-          this->defer("VictronBleF",
+          this->defer(DEFER_ORION_XS,
                       [this]() { this->on_orion_xs_message_callback_.call(&this->last_package_.data.orion_xs); });
         }
         break;
@@ -208,9 +227,16 @@ bool VictronBle::encrypt_message_(const uint8_t *crypted_data, const uint8_t cry
     return false;
   }
 
+  // AES-CTR nonce: 16-byte counter block. Victron places the advertisement's
+  // 2-byte data counter (little-endian) into bytes 0-1; bytes 2-15 must be
+  // zero. Aggregate-init zero-fills omitted entries, but spell out the full
+  // layout to keep the nonce structure obvious to future readers.
   size_t nc_offset = 0;
-  uint8_t nonce_counter[16] = {data_counter_lsb, data_counter_msb, 0};
-  uint8_t stream_block[16] = {0};
+  uint8_t nonce_counter[16] = {data_counter_lsb, data_counter_msb,
+                               0, 0, 0, 0, 0, 0,
+                               0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t stream_block[16] = {0, 0, 0, 0, 0, 0, 0, 0,
+                              0, 0, 0, 0, 0, 0, 0, 0};
 
   status = esp_aes_crypt_ctr(&ctx, crypted_len, &nc_offset, nonce_counter, stream_block, crypted_data, encrypted_data);
   if (status != 0) {
