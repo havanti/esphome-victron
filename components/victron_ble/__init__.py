@@ -8,15 +8,10 @@ from esphome.const import (
     CONF_MAC_ADDRESS,
     CONF_ON_MESSAGE,
     CONF_TRIGGER_ID,
+    Framework,
 )
 from esphome.yaml_util import ESPHomeDumper
-from esphome.core import CORE, ID
-
-
-def _validate_esp_idf(config):
-    if not (CORE.is_esp32 and not CORE.using_arduino):
-        raise cv.Invalid("victron_ble requires the ESP32 platform with the ESP-IDF framework")
-    return config
+from esphome.core import ID
 
 
 CODEOWNERS = ["@havanti"]
@@ -215,7 +210,7 @@ def bind_mac_address_or_shortened(value):
 
 
 CONFIG_SCHEMA = cv.All(
-    _validate_esp_idf,
+    cv.only_with_framework(Framework.ESP_IDF),
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(VictronBle),

@@ -1,8 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import esp32_ble_tracker
-from esphome.const import CONF_ID
-from esphome.core import CORE
+from esphome.const import CONF_ID, Framework
 
 CODEOWNERS = ["@havanti"]
 DEPENDENCIES = ["esp32_ble_tracker"]
@@ -13,14 +12,8 @@ VictronListener = victron_scanner_ns.class_(
 )
 
 
-def _validate_esp_idf(config):
-    if not (CORE.is_esp32 and not CORE.using_arduino):
-        raise cv.Invalid("victron_scanner requires the ESP32 platform with the ESP-IDF framework")
-    return config
-
-
 CONFIG_SCHEMA = cv.All(
-    _validate_esp_idf,
+    cv.only_with_framework(Framework.ESP_IDF),
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(VictronListener),

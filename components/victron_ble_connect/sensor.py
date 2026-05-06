@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.core import CORE, ID
+from esphome.core import ID
 from esphome.components import ble_client, sensor
 from esphome.const import (
     CONF_CURRENT,
@@ -12,6 +12,7 @@ from esphome.const import (
     DEVICE_CLASS_DURATION,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_VOLTAGE,
+    Framework,
     ICON_BATTERY,
     STATE_CLASS_MEASUREMENT,
     UNIT_AMPERE,
@@ -66,14 +67,8 @@ def final_validate_maximum_number_of_sensors_if_notify(
     return inherit_property
 
 
-def _validate_esp_idf(config):
-    if not (CORE.is_esp32 and not CORE.using_arduino):
-        raise cv.Invalid("victron_ble_connect requires the ESP32 platform with the ESP-IDF framework")
-    return config
-
-
 CONFIG_SCHEMA = cv.All(
-    _validate_esp_idf,
+    cv.only_with_framework(Framework.ESP_IDF),
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(VictronBleConnect),
