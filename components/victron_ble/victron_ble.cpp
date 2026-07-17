@@ -176,7 +176,7 @@ bool VictronBle::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
   }
 
   if (victron_data->encryption_key_0 != this->bindkey_[0]) {
-    ESP_LOGW(TAG, "[%s] Incorrect Bindkey. Must start with %02X", this->address_str().c_str(), this->bindkey_[0]);
+    ESP_LOGV(TAG, "[%s] Incorrect Bindkey. Must start with %02X", this->address_str().c_str(), this->bindkey_[0]);
     return false;
   }
 

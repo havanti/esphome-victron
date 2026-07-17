@@ -40,6 +40,10 @@ bool VictronListener::parse_device(const esp32_ble_tracker::ESPBTDevice &device)
 
   const auto victron_data = (VICTRON_BT_MANUFACTURER_DATA *) manu_data.data.data();
 
+  if (victron_data->d00 != VICTRON_BT_RECORD_TYPE_PRODUCT_ADVERTISEMENT || victron_data->d01 != VICTRON_BT_RECORD_VERSION) {
+    return false;
+  }
+
   if (victron_data->product_id == VICTRON_PRODUCT_ID::SMARTSHUNT_500A_50MV) {
     ESP_LOGI(TAG, "FOUND SMART SHUNT 500A/50mV '%s' at %s", device.get_name().c_str(), device.address_str().c_str());
   }

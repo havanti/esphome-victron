@@ -237,11 +237,14 @@ enum class VICTRON_PRODUCT_ID : uint16_t {
   SMARTSHUNT_500A_50MV = 0xA389,
 };
 
-struct VICTRON_BT_MANUFACTURER_DATA {
-  uint8_t d00;  // 0x10
-  uint8_t d01;  // 0x02
+struct __attribute__((packed)) VICTRON_BT_MANUFACTURER_DATA {
+  uint8_t d00;  // VICTRON_BT_RECORD_TYPE_PRODUCT_ADVERTISEMENT
+  uint8_t d01;  // VICTRON_BT_RECORD_VERSION
   VICTRON_PRODUCT_ID product_id;
 };
+
+static constexpr uint8_t VICTRON_BT_RECORD_TYPE_PRODUCT_ADVERTISEMENT = 0x10;
+static constexpr uint8_t VICTRON_BT_RECORD_VERSION = 0x02;
 
 class VictronListener : public esp32_ble_tracker::ESPBTDeviceListener {
  public:

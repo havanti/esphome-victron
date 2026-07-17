@@ -104,7 +104,7 @@ class VictronBleConnect : public PollingComponent, public ble_client::BLEClientN
   bool notify_ = true;
 
   std::string name_;
-  uint16_t handle_keep_alive_;
+  uint16_t handle_keep_alive_{0};
 
   uint8_t read_request_started_ = 0;
   uint16_t find_handle_(const esp32_ble_tracker::ESPBTUUID *characteristic);
