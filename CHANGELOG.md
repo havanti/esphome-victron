@@ -17,6 +17,16 @@ Plattform: ausschließlich ESP32 mit ESP-IDF-Framework (kein Arduino).
 
 ---
 
+## [0.1.2] — 2026-07-17 — Korrektheits-Fixes aus Code-Audit
+
+### Geändert
+- `victron_ble`: Bindkey-Mismatch-Log von `ESP_LOGW` auf `ESP_LOGV` gesenkt — Byte 0 des Bindkeys landet nicht mehr in Standard-Logs
+- `victron_ble` (`__init__.py`): Codegen-Deklaration von `cg.PollingComponent` auf `cg.Component` korrigiert (C++-Klasse erbt `Component`; `update()` wird manuell aufgerufen)
+
+### Behoben
+- `victron_scanner`: `VICTRON_BT_MANUFACTURER_DATA` mit `__attribute__((packed))` versehen und Record-Type/-Version (0x10/0x02) vor Auswertung validiert — verhindert Fehlinterpretation fremder Manufacturer-Daten
+- `victron_ble_connect`: `handle_keep_alive_` mit `0` initialisiert — war bis zum ersten `SEARCH_CMPL`-Event undefiniert
+
 ## [0.1.1] — 2026-04-29 — Cross-Task-Synchronisation + Cleanup
 
 ### Geändert
