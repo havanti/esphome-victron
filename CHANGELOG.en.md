@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Compatibility status
 
 Tested with:
+- ESPHome **2026.7.2** — ESP-IDF ✅
 - ESPHome **2026.6.5** — ESP-IDF ✅
 
 Platform: ESP32 with ESP-IDF framework only (no Arduino).
