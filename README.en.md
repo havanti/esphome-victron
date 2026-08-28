@@ -2,7 +2,7 @@
 
 # ESPHOME-VICTRON
 
-[![Stars](https://img.shields.io/github/stars/havanti/esphome-victron?style=flat-square&color=yellow)](https://github.com/havanti/esphome-victron) [![ESPHome](https://img.shields.io/badge/ESPHome-%E2%89%A52026.7.4-blue?style=flat-square)](https://esphome.io) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/havanti/esphome-victron?style=flat-square&color=yellow)](https://github.com/havanti/esphome-victron) [![ESPHome](https://img.shields.io/badge/ESPHome-%E2%89%A52026.8.1-blue?style=flat-square)](https://esphome.io) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](LICENSE)
 
 [Devices](#supported-devices) • [Quick start](#quick-start) • [Bind keys](#reading-bind-keys) • [Example](#sample-configuration) • [FAQ](#faq)
 
@@ -151,7 +151,7 @@ victron_smartshunt_bindkey: "0123456789abcdef0123456789abcdef"
 
 - **ESP32** (Classic, S3, C3 or C6 — anything with Bluetooth LE)
 - **Framework:** ESP-IDF (Arduino is rejected)
-- **ESPHome** ≥ 2026.7.4
+- **ESPHome** ≥ 2026.8.1
 - **VictronConnect app** ≥ 5.93 to read bind keys
 
 ---
