@@ -79,7 +79,7 @@ enum class VICTRON_SENSOR_TYPE {
 };
 
 #ifdef ESPHOME_LOG_HAS_CONFIG
-static const char *enum_to_c_str(const VICTRON_SENSOR_TYPE val) {
+inline const char *enum_to_c_str(const VICTRON_SENSOR_TYPE val) {
   switch (val) {
     case VICTRON_SENSOR_TYPE::UNSET:
       return "UNSET";
