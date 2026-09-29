@@ -18,6 +18,14 @@ Platform: ESP32 with ESP-IDF framework only (no Arduino).
 
 ---
 
+## [0.1.3] — 2026-09-29 — Unused function warnings
+
+### Fixed
+- `victron_ble`: the `enum_to_c_str()` helpers for sensor, binary sensor and text sensor were
+  defined `static` in headers. Every file including the header got its own copy, and where it went
+  unused (for example in `main.cpp`) the build reported `-Wunused-function`. The helpers are now
+  `inline`.
+
 ## [0.1.2] — 2026-07-17 — Correctness fixes from code audit
 
 ### Changed
