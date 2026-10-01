@@ -10,6 +10,8 @@ namespace victron_ble {
 
 static const char *const TAG = "victron_ble";
 
+static constexpr size_t AES_CTR_BLOCK_SIZE = 16;
+
 // defer() coalesces by name: a queued lambda is dropped when a new one is
 // queued under the same name. We keep one queue per record type so that
 // fast advertisement bursts collapse to the latest reading per category
@@ -181,7 +183,8 @@ bool VictronBle::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
   }
 
   // Filter out duplicate messages
-  if ((victron_data->data_counter_lsb | (victron_data->data_counter_msb << 8)) == this->last_package_.data_counter) {
+  const uint16_t data_counter = victron_data->data_counter_lsb | (victron_data->data_counter_msb << 8);
+  if (data_counter == this->last_package_.data_counter) {
     return false;
   }
 
@@ -195,28 +198,28 @@ bool VictronBle::parse_device(const esp32_ble_tracker::ESPBTDevice &device) {
     return false;
   }
 
-  uint8_t encrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE] = {0};
+  uint8_t decrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE] = {0};
 
-  if (crypted_len > sizeof(encrypted_data)) {
+  if (crypted_len > sizeof(decrypted_data)) {
     ESP_LOGW(TAG, "[%s] Record is too long %u", this->address_str().c_str(), crypted_len);
     return false;
   }
 
-  if (!this->encrypt_message_(crypted_data, crypted_len, encrypted_data, victron_data->data_counter_lsb,
+  if (!this->decrypt_message_(crypted_data, crypted_len, decrypted_data, victron_data->data_counter_lsb,
                               victron_data->data_counter_msb)) {
-    // Error logging is done by encrypt_message_.
+    // Error logging is done by decrypt_message_.
     return false;
   }
 
-  this->handle_record_(victron_data->record_type, encrypted_data);
+  this->handle_record_(victron_data->record_type, decrypted_data);
 
   // Save the last received data counter
-  this->last_package_.data_counter = victron_data->data_counter_lsb | (victron_data->data_counter_msb << 8);
+  this->last_package_.data_counter = data_counter;
   return true;
 }
 
-bool VictronBle::encrypt_message_(const uint8_t *crypted_data, const uint8_t crypted_len,
-                                  uint8_t encrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE],
+bool VictronBle::decrypt_message_(const uint8_t *crypted_data, const uint8_t crypted_len,
+                                  uint8_t decrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE],
                                   const uint8_t data_counter_lsb, const uint8_t data_counter_msb) {
   esp_aes_context ctx;
   esp_aes_init(&ctx);
@@ -232,13 +235,13 @@ bool VictronBle::encrypt_message_(const uint8_t *crypted_data, const uint8_t cry
   // zero. Aggregate-init zero-fills omitted entries, but spell out the full
   // layout to keep the nonce structure obvious to future readers.
   size_t nc_offset = 0;
-  uint8_t nonce_counter[16] = {data_counter_lsb, data_counter_msb,
+  uint8_t nonce_counter[AES_CTR_BLOCK_SIZE] = {data_counter_lsb, data_counter_msb,
                                0, 0, 0, 0, 0, 0,
                                0, 0, 0, 0, 0, 0, 0, 0};
-  uint8_t stream_block[16] = {0, 0, 0, 0, 0, 0, 0, 0,
+  uint8_t stream_block[AES_CTR_BLOCK_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0,
                               0, 0, 0, 0, 0, 0, 0, 0};
 
-  status = esp_aes_crypt_ctr(&ctx, crypted_len, &nc_offset, nonce_counter, stream_block, crypted_data, encrypted_data);
+  status = esp_aes_crypt_ctr(&ctx, crypted_len, &nc_offset, nonce_counter, stream_block, crypted_data, decrypted_data);
   if (status != 0) {
     ESP_LOGE(TAG, "[%s] Error during esp_aes_crypt_ctr operation (%i).", this->address_str().c_str(), status);
     esp_aes_free(&ctx);
@@ -246,8 +249,8 @@ bool VictronBle::encrypt_message_(const uint8_t *crypted_data, const uint8_t cry
   }
 
   esp_aes_free(&ctx);
-  ESP_LOGV(TAG, "[%s] Encrypted message: %s", this->address_str().c_str(),
-           format_hex_pretty(encrypted_data, crypted_len).c_str());
+  ESP_LOGV(TAG, "[%s] Decrypted message: %s", this->address_str().c_str(),
+           format_hex_pretty(decrypted_data, crypted_len).c_str());
   return true;
 }
 
@@ -343,9 +346,9 @@ bool VictronBle::is_record_type_supported_(const VICTRON_BLE_RECORD_TYPE record_
 }
 
 void VictronBle::handle_record_(const VICTRON_BLE_RECORD_TYPE record_type,
-                                const uint8_t encrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE]) {
+                                const uint8_t decrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE]) {
   this->last_package_.record_type = record_type;
-  memcpy(this->last_package_.data.raw, encrypted_data, VICTRON_ENCRYPTED_DATA_MAX_SIZE);
+  memcpy(this->last_package_.data.raw, decrypted_data, VICTRON_ENCRYPTED_DATA_MAX_SIZE);
   this->last_package_updated_.store(true);
   this->update();
 }

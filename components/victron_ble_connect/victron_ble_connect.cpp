@@ -1,14 +1,31 @@
 #include "victron_ble_connect.h"
 #include "esphome/core/log.h"
 
+#include <cinttypes>
+#include <cstring>
+
 #ifdef USE_ESP32_FRAMEWORK_ESP_IDF
 
 namespace esphome {
 namespace victron_ble_connect {
 
 static const char *const TAG = "victron_ble_connect";
-static const std::string KEEP_ALIVE_INTERVAL = "victron_ble_keep_alive";
-static const std::string UPDATE_SENSOR_TIMEOUT = "victron_ble_update_sensors";
+static constexpr const char *KEEP_ALIVE_INTERVAL = "victron_ble_keep_alive";
+static constexpr const char *UPDATE_SENSOR_TIMEOUT = "victron_ble_update_sensors";
+
+static constexpr uint32_t UPDATE_INTERVAL_MS = 60000;
+static constexpr uint32_t UPDATE_SENSOR_DELAY_MS = 100;
+static constexpr uint32_t KEEP_ALIVE_PERIOD_MS = 20000;
+// Keep alive value written to the device, in ms.
+static constexpr uint16_t KEEP_ALIVE_TIMEOUT_MS = 30000;
+
+// GATT values are little-endian; memcpy avoids unaligned access through reinterpret_cast.
+template<typename T> static T read_value_as(const uint8_t *value) {
+  T result;
+  memcpy(&result, value, sizeof(T));
+  return result;
+}
+
 /**
  * Expected steps:
  * 1. ESP_GATTC_OPEN_EVT
@@ -17,10 +34,10 @@ static const std::string UPDATE_SENSOR_TIMEOUT = "victron_ble_update_sensors";
  * 3. ESP_GATTC_READ_CHAR_EVT -> first value & (if notify) `esp_ble_gattc_register_for_notify`
  * 4. ESP_GATTC_REG_FOR_NOTIFY_EVT
  * 5. ESP_GATTC_NOTIFY_EVT -> continous values
- * if notify: every 20 seconds (polling frequency) a 60 second keep alive is send.
+ * if notify: every 20 seconds a 30 second keep alive is sent.
  */
 
-VictronBleConnect::VictronBleConnect() : PollingComponent(60000 /* 60 seconds */) {}
+VictronBleConnect::VictronBleConnect() : PollingComponent(UPDATE_INTERVAL_MS) {}
 
 void VictronBleConnect::dump_config() {
   ESP_LOGCONFIG(TAG, "Victron ble connect");
@@ -134,10 +151,10 @@ void VictronBleConnect::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt
 
       if (this->read_request_started_ == 0) {
         // I got all requested values. Submit initial sensors.
-        this->set_timeout(UPDATE_SENSOR_TIMEOUT, 100 /*msec */, [this]() { this->update_sensors_(); });
+        this->set_timeout(UPDATE_SENSOR_TIMEOUT, UPDATE_SENSOR_DELAY_MS, [this]() { this->update_sensors_(); });
         if (this->notify_) {
           // Register keep alive interval.
-          this->set_interval(KEEP_ALIVE_INTERVAL, 20000 /* 20 seconds */, [this]() { this->send_keep_alive_(); });
+          this->set_interval(KEEP_ALIVE_INTERVAL, KEEP_ALIVE_PERIOD_MS, [this]() { this->send_keep_alive_(); });
         } else {
           // Not using notification so I can disconnect.
           this->parent_->set_enabled(false);
@@ -187,8 +204,10 @@ void VictronBleConnect::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt
 uint16_t VictronBleConnect::find_handle_(const esp32_ble_tracker::ESPBTUUID *characteristic) {
   auto *chr = this->parent_->get_characteristic(SERVICE_UUID, *characteristic);
   if (chr == nullptr) {
+    char service_str[esp32_ble::UUID_STR_LEN];
+    char characteristic_str[esp32_ble::UUID_STR_LEN];
     ESP_LOGW(TAG, "[%s] No characteristic found at service %s char %s", this->get_name().c_str(),
-             SERVICE_UUID.to_string().c_str(), (*characteristic).to_string().c_str());
+             SERVICE_UUID.to_str(service_str), characteristic->to_str(characteristic_str));
     return 0;
   }
   return chr->handle;
@@ -223,8 +242,9 @@ bool VictronBleConnect::request_read_(const uint16_t handle) {
                                         ESP_GATT_AUTH_REQ_SIGNED_MITM);
 
   if (status) {
+    char service_str[esp32_ble::UUID_STR_LEN];
     ESP_LOGW(TAG, "[%s] Error sending read request for service %s handle 0x%04x, status=%d", this->get_name().c_str(),
-             SERVICE_UUID.to_string().c_str(), handle, status);
+             SERVICE_UUID.to_str(service_str), handle, status);
     return false;
   } else {
     this->read_request_started_++;
@@ -238,52 +258,52 @@ void VictronBleConnect::read_value_(const uint16_t handle, const uint8_t *value,
 
   if (handle == this->handle_state_of_charge_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
-    this->value_state_of_charge_ = *reinterpret_cast<const uint16_t *>(value);
+    this->value_state_of_charge_ = read_value_as<uint16_t>(value);
     this->value_is_set_state_of_charge_ = true;
     ESP_LOGD(TAG, "[%s] State of Charge: %u", this->get_name().c_str(), this->value_state_of_charge_.load());
   } else if (handle == this->handle_voltage_ && value_len == sizeof(int16_t)) {
     handle_found = true;
-    this->value_voltage_ = *reinterpret_cast<const int16_t *>(value);
+    this->value_voltage_ = read_value_as<int16_t>(value);
     this->value_is_set_voltage_ = true;
     ESP_LOGD(TAG, "[%s] Voltage: %i", this->get_name().c_str(), this->value_voltage_.load());
   } else if (handle == this->handle_power_ && value_len == sizeof(int16_t)) {
     handle_found = true;
-    this->value_power_ = *reinterpret_cast<const int16_t *>(value);
+    this->value_power_ = read_value_as<int16_t>(value);
     this->value_is_set_power_ = true;
     ESP_LOGD(TAG, "[%s] Power: %i", this->get_name().c_str(), this->value_power_.load());
   } else if (handle == this->handle_current_ && value_len == sizeof(int32_t)) {
     handle_found = true;
-    this->value_current_ = *reinterpret_cast<const int32_t *>(value);
+    this->value_current_ = read_value_as<int32_t>(value);
     this->value_is_set_current_ = true;
-    ESP_LOGD(TAG, "[%s] Current: %i", this->get_name().c_str(), this->value_current_.load());
+    ESP_LOGD(TAG, "[%s] Current: %" PRId32, this->get_name().c_str(), this->value_current_.load());
   } else if (handle == this->handle_ah_ && value_len == sizeof(int32_t)) {
     handle_found = true;
-    this->value_ah_ = *reinterpret_cast<const int32_t *>(value);
+    this->value_ah_ = read_value_as<int32_t>(value);
     this->value_is_set_ah_ = true;
-    ESP_LOGD(TAG, "[%s] Ah: %i", this->get_name().c_str(), this->value_ah_.load());
+    ESP_LOGD(TAG, "[%s] Ah: %" PRId32, this->get_name().c_str(), this->value_ah_.load());
   } else if (handle == this->handle_starter_battery_voltage_ && value_len == sizeof(int16_t)) {
     handle_found = true;
-    this->value_starter_battery_voltage_ = *reinterpret_cast<const int16_t *>(value);
+    this->value_starter_battery_voltage_ = read_value_as<int16_t>(value);
     this->value_is_set_starter_battery_voltage_ = true;
     ESP_LOGD(TAG, "[%s] Starter Battery Voltage: %i", this->get_name().c_str(), this->value_starter_battery_voltage_.load());
   } else if (handle == this->handle_val2_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
-    this->value_val2_ = *reinterpret_cast<const uint16_t *>(value);
+    this->value_val2_ = read_value_as<uint16_t>(value);
     this->value_is_set_val2_ = true;
     ESP_LOGD(TAG, "[%s] Value 2: %u", this->get_name().c_str(), this->value_val2_.load());
   } else if (handle == this->handle_val3_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
-    this->value_val3_ = *reinterpret_cast<const uint16_t *>(value);
+    this->value_val3_ = read_value_as<uint16_t>(value);
     this->value_is_set_val3_ = true;
     ESP_LOGD(TAG, "[%s] Value 3: %u", this->get_name().c_str(), this->value_val3_.load());
   } else if (handle == this->handle_val4_ && value_len == sizeof(int16_t)) {
     handle_found = true;
-    this->value_val4_ = *reinterpret_cast<const int16_t *>(value);
+    this->value_val4_ = read_value_as<int16_t>(value);
     this->value_is_set_val4_ = true;
     ESP_LOGD(TAG, "[%s] Value 4: %i", this->get_name().c_str(), this->value_val4_.load());
   } else if (handle == this->handle_remaining_time_ && value_len == sizeof(uint16_t)) {
     handle_found = true;
-    this->value_remaining_time_ = *reinterpret_cast<const uint16_t *>(value);
+    this->value_remaining_time_ = read_value_as<uint16_t>(value);
     this->value_is_set_remaining_time_ = true;
     ESP_LOGD(TAG, "[%s] Remaining Time: %u", this->get_name().c_str(), this->value_remaining_time_.load());
   }
@@ -295,20 +315,22 @@ void VictronBleConnect::read_value_(const uint16_t handle, const uint8_t *value,
           esp_ble_gattc_register_for_notify(this->parent_->get_gattc_if(), this->parent_->get_remote_bda(), handle);
 
       if (status) {
+        char service_str[esp32_ble::UUID_STR_LEN];
         ESP_LOGW(TAG, "[%s] Error sending notify request for service %s handle 0x%04x, status=%d",
-                 this->get_name().c_str(), SERVICE_UUID.to_string().c_str(), handle, status);
+                 this->get_name().c_str(), SERVICE_UUID.to_str(service_str), handle, status);
       }
     }
   } else {
+    char service_str[esp32_ble::UUID_STR_LEN];
     ESP_LOGW(TAG, "[%s] Error received data with unknown handle for service %s handle 0x%04x", this->get_name().c_str(),
-             SERVICE_UUID.to_string().c_str(), handle);
+             SERVICE_UUID.to_str(service_str), handle);
   }
 }
 
 void VictronBleConnect::send_keep_alive_() {
   if (this->node_state == esp32_ble_tracker::ClientState::ESTABLISHED && this->handle_keep_alive_ != 0) {
     // A keep alive is required. Without that, the device will automatically disconnect after one minute.
-    uint16_t keep_alive = 30000 /* 30 seconds */;
+    uint16_t keep_alive = KEEP_ALIVE_TIMEOUT_MS;
     auto value = reinterpret_cast<uint8_t *>(&keep_alive);
     uint16_t value_len = sizeof(keep_alive);
     auto status =

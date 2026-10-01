@@ -18,6 +18,33 @@ Platform: ESP32 with ESP-IDF framework only (no Arduino).
 
 ---
 
+## [0.1.4] — 2026-10-01 — Cleanup after code audit
+
+### Changed
+- `victron_ble`: a battery current without a valid value now shows as unknown instead of −0.001 A.
+  Victron marks it with the raw value 0x3FFFFF. The 22-bit field is signed and reads as −1, so the
+  comparison with 0x3FFFFF never matched. Affects current and power on Battery Monitor (BMV,
+  SmartShunt) and DC Energy Meter. Not yet tested on hardware.
+- `victron_ble`: battery power on Battery Monitor and DC Energy Meter checked the voltage against
+  0x1FFF instead of 0x7FFF. With the voltage missing, the sensor showed a wrong value instead of
+  unknown. Not yet tested on hardware.
+- `victron_ble`: Orion XS input and output current and power use the icon `mdi:power` instead of
+  `mdi:battery`, like the other sensors outside the battery.
+- `victron_scanner`: `address_str()` is deprecated in ESPHome and goes away in 2027.2, replaced by
+  `address_str_to()`.
+- No change in behavior: "not available" markers, AES block size and keep-alive times are named
+  constants. `encrypt_message_()` is now `decrypt_message_()`, since it decrypts.
+  `victron_ble_connect` reads GATT values with `memcpy` instead of `reinterpret_cast`. `operator&`
+  only applies to enums, `address_` and `bindkey_` have default values, the `break` lines in the text
+  sensor are indented correctly.
+
+### Fixed
+- `victron_ble_connect`: did not compile with ESPHome 2026.9.1. Scheduler names are now
+  `const char *`, UUIDs are printed via `to_str()`. Two format warnings for `int32_t` values in the
+  log are gone as well.
+
+All three components compiled with ESPHome 2026.9.1 (ESP-IDF) without warnings.
+
 ## [0.1.3] — 2026-09-29 — Unused function warnings
 
 ### Fixed

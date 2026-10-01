@@ -2,6 +2,7 @@
 
 #include <array>
 #include <atomic>
+#include <type_traits>
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
 #include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
@@ -712,7 +713,8 @@ enum struct VE_REG_BMS_FLAGs : uint32_t {
   ALLOWED_TO_CHARGE = (1ul << 25),
   ALLOWED_TO_DISCHARGE = (1ul << 26),
 };
-template<class T> inline T operator&(T a, T b) { return (T) ((int) a & (int) b); }
+template<class T, typename = std::enable_if_t<std::is_enum<T>::value>>
+inline T operator&(T a, T b) { return (T) ((int) a & (int) b); }
 
 // source:
 // - https://github.com/Fabian-Schmidt/esphome-victron_ble/issues/25
@@ -952,8 +954,8 @@ class VictronBle : public esp32_ble_tracker::ESPBTDeviceListener, public Compone
 #undef VICTRON_MESSAGE_ADD_CB
 
  protected:
-  uint64_t address_;
-  std::array<uint8_t, 16> bindkey_;
+  uint64_t address_{0};
+  std::array<uint8_t, 16> bindkey_{};
 
   VictronBleData last_package_{};
 
@@ -980,13 +982,13 @@ class VictronBle : public esp32_ble_tracker::ESPBTDeviceListener, public Compone
 
 #undef VICTRON_MESSAGE_STORAGE_CB
 
-  bool encrypt_message_(const uint8_t *crypted_data, const uint8_t crypted_len,
-                        uint8_t encrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE],
+  bool decrypt_message_(const uint8_t *crypted_data, const uint8_t crypted_len,
+                        uint8_t decrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE],
                         const uint8_t data_counter_lsb, const uint8_t data_counter_msb);
 
   bool is_record_type_supported_(const VICTRON_BLE_RECORD_TYPE record_type, const uint8_t crypted_len);
   void handle_record_(const VICTRON_BLE_RECORD_TYPE record_type,
-                      const uint8_t encrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE]);
+                      const uint8_t decrypted_data[VICTRON_ENCRYPTED_DATA_MAX_SIZE]);
   void update();
 };
 

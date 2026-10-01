@@ -208,6 +208,14 @@ inline const char *enum_to_c_str(const VICTRON_SENSOR_TYPE val) {
 }
 #endif  // ESPHOME_LOG_HAS_CONFIG
 
+// Victron marks a field as "not available" with a fixed raw value:
+// unsigned N-bit fields use all bits set, signed N-bit fields the highest positive value.
+template<unsigned BITS> constexpr int32_t vic_na_unsigned() { return static_cast<int32_t>((1ul << BITS) - 1); }
+template<unsigned BITS> constexpr int32_t vic_na_signed() { return static_cast<int32_t>((1ul << (BITS - 1)) - 1); }
+// Exception: the signed 22-bit battery current uses all bits set (0x3FFFFF),
+// which the sign-extended bitfield reads as -1.
+static constexpr int32_t VIC_NA_CURRENT_22BIT = -1;
+
 class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
  public:
   VictronSensor(VictronBle *parent, VICTRON_SENSOR_TYPE val) {
@@ -223,7 +231,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   void register_callback();
 
   inline void publish_state_(vic_22bit_0_001 val) {
-    if (val == 0x3FFFFF) {
+    if (val == VIC_NA_CURRENT_22BIT) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.001f * static_cast<int32_t>(val));
@@ -231,7 +239,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_20bit_0_1_negative val) {
-    if (val == 0xFFFFF) {
+    if (val == vic_na_unsigned<20>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(-0.1f * static_cast<uint32_t>(val));
@@ -239,7 +247,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_19bit_1 val) {
-    if (val == 0x3FFFF) {
+    if (val == vic_na_signed<19>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(static_cast<int32_t>(val));
@@ -247,7 +255,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_01 val) {
-    if (val == 0x7FFF) {
+    if (val == vic_na_signed<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<int16_t>(val));
@@ -255,7 +263,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_01_noNAN val) {
-    if (val == 0x7FFF) {
+    if (val == vic_na_signed<16>()) {
       this->publish_state(0.0f);
     } else {
       this->publish_state(0.01f * static_cast<int16_t>(val));
@@ -263,7 +271,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_01_positive val) {
-    if (val == 0xFFFF) {
+    if (val == vic_na_unsigned<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val));
@@ -271,7 +279,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_1 val) {
-    if (val == 0x7FFF) {
+    if (val == vic_na_signed<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.1f * static_cast<int16_t>(val));
@@ -279,7 +287,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_1_positive val) {
-    if (val == 0xFFFF) {
+    if (val == vic_na_unsigned<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.1f * static_cast<uint16_t>(val));
@@ -287,7 +295,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_1 val) {
-    if (val == 0x7FFF) {
+    if (val == vic_na_signed<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(static_cast<int16_t>(val));
@@ -295,7 +303,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_1_positive val) {
-    if (val == 0xFFFF) {
+    if (val == vic_na_unsigned<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(static_cast<uint16_t>(val));
@@ -303,7 +311,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_temperature_16bit val) {
-    if (val == 0xFFFF) {
+    if (val == vic_na_unsigned<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val) - 273.15f);
@@ -311,7 +319,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_15bit_0_01_positive val) {
-    if (val == 0x7FFF) {
+    if (val == vic_na_unsigned<15>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val));
@@ -319,7 +327,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_14bit_0_01_positive val) {
-    if (val == 0x3FFF) {
+    if (val == vic_na_unsigned<14>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val));
@@ -327,7 +335,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_13bit_0_01_positive val) {
-    if (val == 0x1FFF) {
+    if (val == vic_na_unsigned<13>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val));
@@ -335,7 +343,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_12bit_0_01_positive val) {
-    if (val == 0xFFF) {
+    if (val == vic_na_unsigned<12>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val));
@@ -343,7 +351,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_11bit_0_1_positive val) {
-    if (val == 0x7FF) {
+    if (val == vic_na_unsigned<11>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.1f * static_cast<uint16_t>(val));
@@ -351,7 +359,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_10bit_0_1_positive val) {
-    if (val == 0x3FF) {
+    if (val == vic_na_unsigned<10>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.1f * static_cast<uint16_t>(val));
@@ -359,7 +367,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_9bit_0_1_negative val) {
-    if (val == 0x1FF) {
+    if (val == vic_na_unsigned<9>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(-0.1f * static_cast<uint16_t>(val));
@@ -367,7 +375,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_9bit_0_1_positive val) {
-    if (val == 0x1FF) {
+    if (val == vic_na_unsigned<9>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.1f * static_cast<uint16_t>(val));
@@ -375,7 +383,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_cell_7bit_0_01 val) {
-    if (val == 0x7F) {
+    if (val == vic_na_unsigned<7>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(0.01f * static_cast<uint16_t>(val) + 2.60f);
@@ -383,7 +391,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_7bit_1 val) {
-    if (val == 0x7F) {
+    if (val == vic_na_unsigned<7>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(static_cast<uint16_t>(val));
@@ -391,7 +399,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_temperature_7bit val) {
-    if (val == 0x7F) {
+    if (val == vic_na_unsigned<7>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state(-40.0f + static_cast<uint16_t>(val));
@@ -399,7 +407,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_22bit_0_001 val_C, vic_16bit_0_01 val_V) {
-    if (val_C == 0x3FFFFF || val_V == 0x1FFF) {
+    if (val_C == VIC_NA_CURRENT_22BIT || val_V == vic_na_signed<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state((0.001f * static_cast<int32_t>(val_C)) * (0.01f * static_cast<int16_t>(val_V)));
@@ -407,7 +415,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_1 val_C, vic_16bit_0_01 val_V) {
-    if (val_C == 0x7FFF || val_V == 0x7FFF) {
+    if (val_C == vic_na_signed<16>() || val_V == vic_na_signed<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state((0.1f * static_cast<int16_t>(val_C)) * (0.01f * static_cast<int16_t>(val_V)));
@@ -415,7 +423,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_1_positive val_C, vic_16bit_0_01_positive val_V) {
-    if (val_C == 0xFFFF || val_V == 0xFFFF) {
+    if (val_C == vic_na_unsigned<16>() || val_V == vic_na_unsigned<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state((0.1f * static_cast<uint16_t>(val_C)) * (0.01f * static_cast<uint16_t>(val_V)));
@@ -423,7 +431,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_16bit_0_1 val_C, vic_14bit_0_01_positive val_V) {
-    if (val_C == 0x7FFF || val_V == 0x3FFF) {
+    if (val_C == vic_na_signed<16>() || val_V == vic_na_unsigned<14>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state((0.1f * static_cast<int16_t>(val_C)) * (0.01f * static_cast<uint16_t>(val_V)));
@@ -431,7 +439,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_11bit_0_1_positive val_C, vic_13bit_0_01_positive val_V) {
-    if (val_C == 0x7FF || val_V == 0x1FFF) {
+    if (val_C == vic_na_unsigned<11>() || val_V == vic_na_unsigned<13>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state((0.1f * static_cast<uint16_t>(val_C)) * (0.01f * static_cast<uint16_t>(val_V)));
@@ -439,7 +447,7 @@ class VictronSensor : public sensor::Sensor, public Parented<VictronBle> {
   };
 
   inline void publish_state_(vic_9bit_0_1_negative val_C, vic_16bit_0_01 val_V) {
-    if (val_C == 0x1FF || val_V == 0x7FFF) {
+    if (val_C == vic_na_unsigned<9>() || val_V == vic_na_signed<16>()) {
       this->publish_state(NAN);
     } else {
       this->publish_state((-0.1f * static_cast<uint16_t>(val_C)) * (0.01f * static_cast<uint16_t>(val_V)));
