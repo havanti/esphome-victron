@@ -12,16 +12,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Tested with:
 - ESPHome **2026.11.0** — ESP-IDF ✅
-- ESPHome **2026.6.5** — ESP-IDF ✅
 
 Platform: ESP32 with ESP-IDF framework only (no Arduino).
 
 ---
 
+## [0.1.6] — 2026-11-19 — ESPHome 2026.11, log level VERBOSE
+
+### Fixed
+- `victron_ble`: still did not compile with ESPHome 2026.11.0 and log level `VERBOSE`.
+
 ## [0.1.5] — 2026-11-19 — ESPHome 2026.11
 
 ### Fixed
-- `victron_ble`: did not compile with ESPHome 2026.11.0 because `str_snprintf` is gone there.
+- `victron_ble`: did not compile with ESPHome 2026.11.0 because `str_snprintf` no longer comes with
+  `helpers.h` there.
 
 ## [0.1.4] — 2026-10-01 — Cleanup after code audit
 

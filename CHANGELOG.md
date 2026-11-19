@@ -12,16 +12,21 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Getestet mit:
 - ESPHome **2026.11.0** — ESP-IDF ✅
-- ESPHome **2026.6.5** — ESP-IDF ✅
 
 Plattform: ausschließlich ESP32 mit ESP-IDF-Framework (kein Arduino).
 
 ---
 
+## [0.1.6] — 2026-11-19 — ESPHome 2026.11, Log-Level VERBOSE
+
+### Behoben
+- `victron_ble`: ließ sich mit ESPHome 2026.11.0 und Log-Level `VERBOSE` weiterhin nicht kompilieren.
+
 ## [0.1.5] — 2026-11-19 — ESPHome 2026.11
 
 ### Behoben
-- `victron_ble`: ließ sich mit ESPHome 2026.11.0 nicht kompilieren, weil `str_snprintf` dort fehlt.
+- `victron_ble`: ließ sich mit ESPHome 2026.11.0 nicht kompilieren, weil `str_snprintf` dort nicht mehr über
+  `helpers.h` kommt.
 
 ## [0.1.4] — 2026-10-01 — Aufräumen nach Code-Audit
 
