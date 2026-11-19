@@ -2,6 +2,7 @@
 
 #include <array>
 #include <atomic>
+#include <cstdio>
 #include <type_traits>
 #include "esphome/core/automation.h"
 #include "esphome/core/component.h"
@@ -920,10 +921,14 @@ class VictronBle : public esp32_ble_tracker::ESPBTDeviceListener, public Compone
     if (this->address_ == 0) {
       return "";
     } else {
-      return str_snprintf("%02X:%02X:%02X:%02X:%02X:%02X", 17, (uint8_t) (this->address_ >> 40) & 0xff,
-                          (uint8_t) (this->address_ >> 32) & 0xff, (uint8_t) (this->address_ >> 24) & 0xff,
-                          (uint8_t) (this->address_ >> 16) & 0xff, (uint8_t) (this->address_ >> 8) & 0xff,
-                          (uint8_t) (this->address_ >> 0) & 0xff);
+      // "XX:XX:XX:XX:XX:XX" plus terminator
+      static constexpr size_t ADDRESS_STR_SIZE = 18;
+      char buf[ADDRESS_STR_SIZE];
+      snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X", (uint8_t) (this->address_ >> 40) & 0xff,
+               (uint8_t) (this->address_ >> 32) & 0xff, (uint8_t) (this->address_ >> 24) & 0xff,
+               (uint8_t) (this->address_ >> 16) & 0xff, (uint8_t) (this->address_ >> 8) & 0xff,
+               (uint8_t) (this->address_ >> 0) & 0xff);
+      return buf;
     }
   }
 

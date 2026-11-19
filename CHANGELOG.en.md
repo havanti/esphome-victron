@@ -11,12 +11,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Compatibility status
 
 Tested with:
-- ESPHome **2026.10.2** — ESP-IDF ✅
+- ESPHome **2026.11.0** — ESP-IDF ✅
 - ESPHome **2026.6.5** — ESP-IDF ✅
 
 Platform: ESP32 with ESP-IDF framework only (no Arduino).
 
 ---
+
+## [0.1.5] — 2026-11-19 — ESPHome 2026.11
+
+### Fixed
+- `victron_ble`: did not compile with ESPHome 2026.11.0 because `str_snprintf` is gone there.
 
 ## [0.1.4] — 2026-10-01 — Cleanup after code audit
 
